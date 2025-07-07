@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Точка доступа — Официальная информация</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-container">
+      <picture>
+        <source srcset="image/logo-small.png" media="(max-width: 600px)">
+        <img src="image/logo-large.png" alt="Логотип Точка доступа" class="logo" />
+      </picture>
+      <div class="site-title">
+        <h1>Точка доступа</h1>
+      </div>
+    </div>
+
+    <nav class="top-nav">
+      <a href="index.html">О нас</a>
+      <a href="index.html#documents">Документы</a>
+      <a href="index.html#contacts">Контакты</a>
+      <a href="reports.html">Отчёты</a>
+    </nav>
+  </div>
+</header>
+
+<header class="report-header">
+  <h1>Финансовый отчёт за <span id="year-label">2024</span> год</h1>
+  <label style="margin-top: 10px; display: block;">
+    Выбрать год:
+    <select id="year-select" style="margin-left: 10px; padding: 5px;">
+      <!-- сюда JS вставит года -->
+    </select>
+  </label>
+</header>
+
+
+<section class="report-section">
+
+  <!-- Остаток с прошлого года -->
+  <div class="report-summary">
+    <h2><i class="fa-solid fa-coins"></i> Остаток с прошлого года</h2>
+    <p><strong id="start-balance">— ₽</strong></p>
+  </div>
+
+  <!-- Excel-файлы -->
+  <div class="report-files">
+    <h2><i class="fa-solid fa-file-excel"></i> Отчётные таблицы</h2>
+    <ul id="excel-list"></ul>
+  </div>
+
+  <!-- Остаток на конец периода -->
+  <div class="report-summary">
+    <h2><i class="fa-solid fa-wallet"></i> Остаток на конец периода</h2>
+    <p><strong id="end-balance">— ₽</strong></p>
+  </div>
+
+  <!-- Диаграммы -->
+  <div class="report-chart">
+    <h2><i class="fa-solid fa-chart-pie"></i> Диаграммы</h2>
+    <div class="chart-container" id="chart-container"></div>
+  </div>
+
+</section>
+
+<footer>
+  <p>© 2025 Точка доступа. Все права защищены.</p>
+</footer>
+
+<script>
+  const select = document.getElementById("year-select");
+  const yearLabel = document.getElementById("year-label");
+
+  const renderReport = (data, year) => {
+    const d = data[year];
+    if (!d) return;
+
+    yearLabel.textContent = year;
+
+    // Остатки
+    document.getElementById("start-balance").textContent = d.start_balance.toLocaleString('ru-RU') + " ₽";
+    document.getElementById("end-balance").textContent = d.end_balance.toLocaleString('ru-RU') + " ₽";
+
+    // Excel
+    const excelList = document.getElementById("excel-list");
+    excelList.innerHTML = "";
+    d.files.forEach(file => {
+      const li = document.createElement("li");
+      const filename = file.split('/').pop();
+      li.innerHTML = `<a href="${file}" download>📥 ${filename}</a>`;
+      excelList.appendChild(li);
+    });
+
+    // Диаграммы
+    const chartContainer = document.getElementById("chart-container");
+    chartContainer.innerHTML = "";
+    d.images.forEach(img => {
+      const image = document.createElement("img");
+      image.src = img;
+      image.alt = "Диаграмма";
+      chartContainer.appendChild(image);
+    });
+  };
+
+  fetch('admin/data.json')
+    .then(res => res.json())
+    .then(data => {
+      const years = Object.keys(data).sort();
+      const savedYear = localStorage.getItem("selectedYear") || years[years.length - 1];
+
+      // Заполняем select
+      years.forEach(y => {
+        const option = document.createElement("option");
+        option.value = y;
+        option.textContent = y;
+        if (y === savedYear) option.selected = true;
+        select.appendChild(option);
+      });
+
+      renderReport(data, savedYear);
+
+      select.addEventListener("change", () => {
+        const newYear = select.value;
+        localStorage.setItem("selectedYear", newYear);
+        renderReport(data, newYear);
+      });
+    })
+    .catch(err => console.error("Ошибка загрузки отчёта:", err));
+</script>
+
+
+</body>
+</html>
